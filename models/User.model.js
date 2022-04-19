@@ -9,15 +9,26 @@ const User = new Schema(
             type: String,
             required: true,
             unique: true,
+            trim:true,
+            maxlength:[50,'Username must be less than 50 characters'],
+            minlength:[5,'Username must be at least 5 characters']
         },
         email: {
             type: String,
             required: true,
             unique: true,
+            trim:true,
+            validate: {
+                validator: function(v) {
+                  return /[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+/.test(v);
+                },
+                message: props => `${props.value} is not a valid email`
+            },
         },
         password:{
             type: String,
             required: true,
+            trim:true,
         },
         posts: [{ 
             type: Schema.Types.ObjectId, ref: 'Post' 
