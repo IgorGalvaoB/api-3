@@ -4,6 +4,7 @@ const User = new Schema(
     {
         name: {
             type: String,
+            required: true
         },
         username:{
             type: String,
@@ -22,7 +23,6 @@ const User = new Schema(
                 validator: function(v) {
                   return /[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+/.test(v);
                 },
-                message: props => `${props.value} is not a valid email`
             },
         },
         password:{
@@ -39,7 +39,7 @@ const User = new Schema(
         coverImage:{
             type: Schema.Types.ObjectId, ref: 'Image'
         },
-        images:[{
+        photos:[{
             type:Schema.Types.ObjectId, ref: 'Image'
         }],
         friends: [{
