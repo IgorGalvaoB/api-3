@@ -1,10 +1,9 @@
 const { Schema, model } = require('mongoose');
 
-const User = new Schema(
+const userSchema = new Schema(
     {
         name: {
             type: String,
-            required: true
         },
         username:{
             type: String,
@@ -25,7 +24,7 @@ const User = new Schema(
                 },
             },
         },
-        password:{
+        hPassword:{
             type: String,
             required: true,
             trim:true,
@@ -47,7 +46,11 @@ const User = new Schema(
         }],
         requestFriends:[{
             type:Schema.Types.ObjectId, ref: 'User'
-        }]
+        }],
+        verifyed:{
+            type: Boolean,
+            default: true, //mudar para false se fizer a verificação de email
+        }
     },
     {
         timestamps: true,
@@ -55,4 +58,4 @@ const User = new Schema(
 ); 
 
 
-module.exports = model('User', User);
+module.exports = model('User', userSchema);
