@@ -19,9 +19,10 @@ const userSchema = new Schema(
             unique: true,
             trim:true,
             validate: {
-                validator: function(v) {
-                  return /[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+/.test(v);
+                validator: function(email) {
+                  return /[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+/.test(email);
                 },
+                message: email => `${email.value} is not a valid email!`
             },
         },
         hPassword:{
