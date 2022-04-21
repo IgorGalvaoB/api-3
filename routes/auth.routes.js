@@ -37,6 +37,39 @@ router.post('/signup', async (req, res) => {
     }
 
 })
-router.post('/login', async (req, res) => {})
+router.post('/login', async (req, res) => {
+    
+        const { email, password } = await authReq(req)
+    
+        try {
+            const user = await User.findOne({ email: email })
+            if (!user) {
+                const error = new Error
+                error.status = 401
+                error.message = "Email or password is incorrect"
+                throw error
+            }
+            const isMatch = await bcrypt.compare(password, user.hPassword);
+            if (!isMatch) {
+                const error = new Error
+                error.status = 401
+                error.message = "Email or password is incorrect"
+                throw error
+            }
+            const payload = {
+                id: user._id,
+                username: user.username,
+                name:user.name
+            }
+            const token = jwt.sign(payload, process.env.SECRET, { expiresIn: '1h' });
 
+            res.status(200).json({name:user.username, token:token })
+    
+        } catch (error) {
+    
+            res.status(error.status || 400).json({ place: "Error on login", error: error.message })
+    
+        }
+    
+})
 module.exports = router;
