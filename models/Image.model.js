@@ -11,5 +11,4 @@ const imageSchema = new Schema(
     }
 ); 
 
-
 module.exports = model('Image', imageSchema);
