@@ -1,7 +1,7 @@
 const validateUserInputs = (email, password, username) => {
 
     if (!username || !email || !password) {
-        console.log(username)
+        
         const error = new Error
 
         error.status = 400
