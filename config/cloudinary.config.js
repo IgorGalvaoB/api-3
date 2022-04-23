@@ -15,7 +15,7 @@ const storage = new CloudinaryStorage({
     resource_type:'image'
   }
 })
-
+console.log(process.env.CLOUDINARY_NAME)
 const uploadCloud = multer({ storage })
 
 module.exports = uploadCloud
