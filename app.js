@@ -1,10 +1,15 @@
 require('dotenv').config();
 const express = require ( 'express' );
 const connect = require('./config/db.config');
-
-
+const cors = require('cors')
 
 const app = express()
+app.use(
+    cors({
+      credentials: true,
+      origin: ['https://www.google.com']
+    })
+);
 
 app.use(express.json())
 

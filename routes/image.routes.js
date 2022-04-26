@@ -9,15 +9,17 @@ const deleteOldImage = require('../controllers/image_controllers/deleteOldImage'
 router.put('/profileImage/:id',  uploadCloud.single('image'),  async (req, res) => {
 
     const { id } = req.params;
-    const { path } = req.file|| 'aaa';
-
+    const { path } = req.file||null;
+    const { type } = req.body;
+    
     try {
         
         verifyCredentials(id,req.id)
-        const user = await User.findById(id,{avatarImage:1});
+        const user = await User.findById(id);
         const newImage = await Image.create({imageUrl:path});
-        await deleteOldImage(user.avatarImage);
-        user.avatarImage = newImage._id;
+        await deleteOldImage(user[type]);
+        user[type] = newImage._id;
+        
         await user.save();
         
         res.status(200).json({ message: 'Image updated' }); 
@@ -26,7 +28,7 @@ router.put('/profileImage/:id',  uploadCloud.single('image'),  async (req, res) 
 
         res.status(error.status || 400).json({
 
-            place: "Error on profile image",
+            place: "Error on upload image",
             error: error.message
 
         });
@@ -35,34 +37,103 @@ router.put('/profileImage/:id',  uploadCloud.single('image'),  async (req, res) 
 
 })
 
-router.put('/coverImage/:id',  uploadCloud.single('image'),  async (req, res) => {
+
+router.put('/photos/:id',uploadCloud.array('image'),async(req,res)=>{
 
     const { id } = req.params;
-    const { path } = req.file|| 'aaa';
+    const  files  = req.files
 
     try {
         
         verifyCredentials(id,req.id)
-        const user = await User.findById(id,{coverImage:1});
-        const newImage = await Image.create({imageUrl:path});
-        await deleteOldImage(user.coverImage);
-        user.coverImage = newImage._id;
-        await user.save();
-        
-        res.status(200).json({ message: 'Image updated' }); 
+        const user = await User.findById(id);
+
+        for(let i=0;i<files.length;i++){
+            const newImage = await Image.create({imageUrl:files[i].path})
+            user.photos.push(newImage._id);
+        }
+
+        user.save();
+        res.status(200).json({ message: 'Images updated' }); 
         
     } catch (error) {
 
         res.status(error.status || 400).json({
 
-            place: "Error on cover image",
+            place: "Error on upload images",
             error: error.message
 
         });
 
     }
 
-})
+});
+
+router.delete('/delete/:userId',async(req,res)=>{
+
+    const { userId } = req.params;
+    const { type, imageId } = req.body;
+    
+    console.log(type)
+    if(type === 'profileImage' || type === 'coverImage'){
+
+        try {
+            
+            verifyCredentials(userId,req.id)
+            const user = await User.findById(userId);
+            await deleteOldImage(user[type]);
+            user[type] = null;
+            await user.save();
+
+            res.status(200).json({ message: 'Image deleted' });
+
+        } catch ( error ){
+                
+                res.status(error.status || 400).json({
+        
+                    place: "Error on delete image",
+                    error: error.message
+        
+                });
+        
+        }
+    }else{
+            console.log(imageId)
+            try {
+                
+                verifyCredentials(userId,req.id)
+                const user = await User.findById(userId);
+                if(user.photos.indexOf(imageId) !== -1){
+
+                    const image = await Image.findByIdAndDelete(imageId);
+                    user.photos.pull(imageId);
+                    await user.save();
+
+                } else {
+
+                    const error = new Error
+                    error.status = 404
+                    error.message = "Image not found"
+                    throw error
+
+                }
+                res.status(200).json({ message: 'Image deleted' });
+    
+            } catch ( error ){
+                    
+                    res.status(error.status || 400).json({
+            
+                        place: "Error on delete image",
+                        error: error.message
+            
+                    });
+            
+            }
+    }
+
+});
+
+
 
 
 
