@@ -73,11 +73,17 @@ router.put('/photos/:id',uploadCloud.array('image'),async(req,res)=>{
 router.get('/userPhotos/:id',async(req,res)=>{
     
         const { id } = req.params;
+        const { limit, offset } = req.body;
     
         try {
     
             const user = await User.findById(id);
-            const images = await Image.find({_id:{$in:user.photos}});
+            const images = await Image.find({_id:{$in:user.photos}})
+            .sort({createdAt:-1})
+            .select({ imageUrl:1,_id:1 })
+            .skip(offset)
+            .limit(limit);
+
             res.status(200).json({ images: images }); 
     
         } catch (error) {
@@ -91,6 +97,33 @@ router.get('/userPhotos/:id',async(req,res)=>{
     
         }
     
+})
+
+router.get('/photo/:id',async(req,res)=>{
+
+    const { id } = req.params;
+
+    try {
+
+        const image = await Image.findById(id).populate({
+            path:'comments',
+            sort:{createdAt:1},
+        }).select('imageUrl comments');
+        
+        res.status(200).json({ image: image }); 
+
+    } catch (error) {
+
+        res.status(error.status || 500).json({
+
+            place: "Error on get image",
+            error: error.message
+
+        });
+
+    }
+
+
 })
 
 router.delete('/delete/:userId',async(req,res)=>{

@@ -3,6 +3,7 @@ const router = Router();
 const User = require('../models/User.model.js');
 const bcrypt = require('bcrypt');
 const verifyCredentials = require('../controllers/user_controllers/verifyCredentials.js');
+const controlUsers = require('../controllers/user_controllers/controlUsers.js');
 
 
 router.post('/password/:id', async (req, res) => {
@@ -11,9 +12,8 @@ router.post('/password/:id', async (req, res) => {
     const { password, newPassword } = req.body;
     const salt = await bcrypt.genSalt(12);
     const hPassword = await bcrypt.hash(newPassword, salt);
-    
-    verifyCredentials(id, req.id)
 
+    verifyCredentials(id, req.id)
 
     try {
         if (password === newPassword) {
@@ -53,8 +53,8 @@ router.post('/password/:id', async (req, res) => {
 
 router.post('/requestFriend/:id', async (req, res) => {
 
-        const userId = req.id;
-        const  friendId  = req.params.id;
+    const userId = req.id;
+    const friendId = req.params.id;
 
     try {
 
@@ -68,16 +68,16 @@ router.post('/requestFriend/:id', async (req, res) => {
             error.message = "Friend already requested you";
             throw error;
 
-        } 
-        if(user.friends.indexOf(friendId) !== -1){
-                
-                const error = new Error;
-                error.status = 400;
-                error.message = "You are already friends";
-                throw error;
-    
         }
-        if(friend.requestFriends.indexOf(userId) !== -1){
+        if (user.friends.indexOf(friendId) !== -1) {
+
+            const error = new Error;
+            error.status = 400;
+            error.message = "You are already friends";
+            throw error;
+
+        }
+        if (friend.requestFriends.indexOf(userId) !== -1) {
 
             const error = new Error;
             error.status = 400;
@@ -87,7 +87,7 @@ router.post('/requestFriend/:id', async (req, res) => {
         }
 
         friend.requestFriends.push(user._id);
-        
+
         await friend.save();
 
         res.status(200).json({ message: 'Friend request sent' });
@@ -109,13 +109,13 @@ router.post('/acceptFriend/:id', async (req, res) => {
 
         const user = await User.findById(userId);
         const friend = await User.findById(friendId);
-        if(user.friends.indexOf(friendId) !== -1){
-                
-                const error = new Error;
-                error.status = 400;
-                error.message = "You are already friends";
-                throw error;
-    
+        if (user.friends.indexOf(friendId) !== -1) {
+
+            const error = new Error;
+            error.status = 400;
+            error.message = "You are already friends";
+            throw error;
+
         }
 
         user.friends = [...user.friends, friendId];
@@ -145,13 +145,13 @@ router.post('/changeUsername/:id', async (req, res) => {
 
     const { id } = req.params;
     const { username } = req.body;
-    
+
     try {
         verifyCredentials(id, req.id);
 
         const alreadyExist = await User.find({ username: username });
-        
-        if(alreadyExist.length > 0){
+
+        if (alreadyExist.length > 0) {
 
             const error = new Error;
             error.status = 400;
@@ -172,34 +172,41 @@ router.post('/changeUsername/:id', async (req, res) => {
 
     }
 
-
 })
 
 router.get('/findUser/:username', async (req, res) => {
 
     const { username } = req.params;
-    console.log(username);
 
     try {
 
         const user = await User.findOne({ username: username })
-        .populate('profileImage')
-        .populate('coverImage')
-        .populate({
-            path:'friends',
-            perDocumentLimit:9
-        })
-        .populate({
-            path:'photos',
-            perDocumentLimit:9,
-        })
-        /* .populate({
-            path:'posts',
-            perDocumentLimit:10,
-        }) */.select({hPassword:0,email:0})
-        
+            .populate({ 
+                path: 'friends profileImage',
+                options:{
+                    select: 'username name _id profileImage',
+                    limit:9,
+                    sort:{name:1,_id:1}
+                }
+            })
+            .populate({
+                path: 'photos',
+                limit:9,
+                options:{
+                    sort:{createdAt:-1},
+                    select: '_id imageUrl'
+                }
+            })
+            .populate({
+                path: 'posts',
+                populate: {
+                    path: 'comments',
+                    perDocumentLimit: 5,
+                },
+                limit: 7,
+            }).select({ hPassword: 0, email: 0 })
 
-        if(user){
+        if (user) {
 
             res.status(200).json({ user: user });
 
@@ -218,10 +225,111 @@ router.get('/findUser/:username', async (req, res) => {
 
     }
 
+})
+
+router.get('/findUsers/:query', async (req, res) => {
+
+    const { query } = req.params;
+    let { skip, limit } = req.body;
+
+    if (!skip || !limit) {
+
+        skip = 0;
+        limit = 8;
+
+    }
+
+    try {
+
+        if (query.length <= 0) {
+
+            const error = new Error;
+            error.status = 400;
+            error.message = "Query is empty";
+            throw error;
+
+        }
+
+        const user = await User.findOne({ _id: req.id })
+
+        const exactUsername = await User.findOne({ 
+                username: query, 
+                _id: { $ne: req.id },
+                count:{$gt:0} 
+            }).populate({
+                path:'profileImage',
+                options:{
+                    select:'_id imageUrl'
+                }
+            }).select({
+                username: 1,
+                name: 1,
+                profileImage: 1,
+                friends: 1,
+            });
+        
+        const friends = await User.find({
+            name: {
+                $in: user.friends,
+                $regex: `^${query}+`,
+                $options: 'i',
+            },
+            count: { $gt: 0 },
+        }).populate({
+            path:'profileImage',
+            options:{
+                select:'_id imageUrl'
+            }
+        }).select('friends username name profileImage _id');
+
+        const notFriends = await User.find({
+            name: { $regex: `^${query}+`, $options: 'i' },
+            _id: { $ne: user._id, $nin: user.friends },
+            count: { $gt: 0 },
+        }).populate({
+            path:'profileImage',
+            options:{
+                select:'_id imageUrl'
+            }
+        }).select({
+            username: 1,
+            name: 1,
+            profileImage: 1,
+            _id: 1,
+            friends: 1,
+        }).skip(skip).limit(limit);
+
+        const users = controlUsers(exactUsername, friends, notFriends);
+
+        if (skip !== 0) {
+
+            if (users.length === 2) {
+
+                const error = new Error();
+                error.status = 404;
+                error.message = "Users not found";
+                throw error;
+
+            }
+
+            res.status(200).json({ users: users.slice(2) });
+
+        } else {
+
+            res.status(200).json({ users: users });
+
+        }
+    } catch (error) {
+
+        res.status(error.status || 500).json({ place: "Error on find users", error: error.message })
+
+    }
 
 })
 
-router.get('/findUsers/:name', async (req, res) => {
+router.get('/getUserFriends/:id', async (req, res) => {
+
+
 
 })
 
