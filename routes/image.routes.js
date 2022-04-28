@@ -9,10 +9,19 @@ const deleteOldImage = require('../controllers/image_controllers/deleteOldImage'
 router.put('/profileImage/:id',  uploadCloud.single('image'),  async (req, res) => {
 
     const { id } = req.params;
-    const { path } = req.file||null;
+    const { path } = req.file;
     const { type } = req.body;
     
     try {
+
+        if(!path){
+
+            const error = new Error;
+            error.status = 400;
+            error.message = "No image selected";
+            throw error;
+
+        }
         
         verifyCredentials(id,req.id)
         const user = await User.findById(id);
@@ -42,8 +51,17 @@ router.put('/photos/:id',uploadCloud.array('image'),async(req,res)=>{
 
     const { id } = req.params;
     const  files  = req.files
-
+    
     try {
+       
+        if(files.length === 0){
+
+            const error = new Error;
+            error.status = 400;
+            error.message = "No image selected";
+            throw error;
+
+        }
         
         verifyCredentials(id,req.id)
         const user = await User.findById(id);
@@ -73,7 +91,7 @@ router.put('/photos/:id',uploadCloud.array('image'),async(req,res)=>{
 router.get('/userPhotos/:id',async(req,res)=>{
     
         const { id } = req.params;
-        const { limit, offset } = req.body;
+        //const { limit, offset } = req.body;
     
         try {
     
@@ -81,8 +99,8 @@ router.get('/userPhotos/:id',async(req,res)=>{
             const images = await Image.find({_id:{$in:user.photos}})
             .sort({createdAt:-1})
             .select({ imageUrl:1,_id:1 })
-            .skip(offset)
-            .limit(limit);
+            //.skip(offset)
+            //.limit(limit);
 
             res.status(200).json({ images: images }); 
     

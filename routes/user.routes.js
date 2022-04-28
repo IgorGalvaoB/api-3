@@ -141,6 +141,28 @@ router.post('/acceptFriend/:id', async (req, res) => {
 
 })
 
+router.post('/changeName/:id', async (req, res) => {
+
+    const { id } = req.params;
+    const { name } = req.body;
+
+    try {
+
+        verifyCredentials(id, req.id);
+        const user = await User.findById(id);
+        user.name = name;
+        await user.save();
+
+        res.status(200).json({ message: 'Name updated' });
+
+    } catch (error) {
+
+        res.status(400 || error.status).json({ place: "Error on change name", error: error.message })
+
+    }
+
+})
+
 router.post('/changeUsername/:id', async (req, res) => {
 
     const { id } = req.params;
@@ -329,6 +351,36 @@ router.get('/findUsers/:query', async (req, res) => {
 
 router.get('/getUserFriends/:id', async (req, res) => {
 
+    const { id } = req.params;
+
+    try {
+
+        const user = await User.findById(id).populate({
+            path: 'friends',
+            options: {
+                select: 'username name _id profileImage',
+                sort:{name:1,username:1}
+            },
+        }).select('friends');
+
+        if (user) {
+
+            res.status(200).json({ friends: user.friends });
+
+        } else {
+
+            const error = new Error;
+            error.status = 404;
+            error.message = "User not found";
+            throw error;
+
+        }
+
+    } catch (error) {
+
+        res.status(400 || error.status).json({ place: "Error on get user friends", error: error.message })
+
+    }
 
 
 })
