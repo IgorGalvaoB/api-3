@@ -5,7 +5,7 @@ const userSchema = new Schema(
         postBy: {
             type:Schema.Types.ObjectId, ref:'User'
         },
-        images: [{
+        imageUrl: [{
             type:Schema.Types.ObjectId, ref: 'Image'
         }],
         comments: [{

@@ -33,7 +33,7 @@ const userSchema = new Schema(
         posts: [{ 
             type: Schema.Types.ObjectId, ref: 'Post' 
         }],
-        avatarImage:{ 
+        profileImage:{ 
             type: Schema.Types.ObjectId, ref: 'Image' 
         },
         coverImage:{
