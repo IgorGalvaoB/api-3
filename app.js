@@ -17,7 +17,7 @@ app.use('/auth', require('./routes/auth.routes'))
 
 app.use(require('./middlewares/auth.middleware'))
 
-//app.use('/user', require('./routes/user.routes'))
+app.use('/user', require('./routes/user.routes'))
 
 app.use('/image', require('./routes/image.routes'))
 
