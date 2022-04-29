@@ -66,20 +66,20 @@ router.post('/:id',uploadCloud.array('image'),async (req, res) => {
 router.delete('/delete/:id',async (req,res)=>{
 
     const { id } = req.params;
-
-    
+    const { postedAt } = req.body;
 
     try {
 
-        const post = await Post.findById(id);
-        const user = await User.findById(req.id);
+        const user = await User.findById(postedAt).select('posts');
+        const post = await Post.find({_id:{$in:user.posts},_id:id,count:{$gt:0}});
         
-        await verifyCredentialsDelete(user,post._id)
+        await verifyCredentialsDelete(post,postedAt,req.id)
 
-        user.posts.pull(post._id);
+        const index = user.posts.indexOf(post._id);
+        user.posts.splice(index,1);
 
         await user.save();
-        await post.remove();
+        await Post.findByIdAndDelete(id);
 
         res.status(200).json({ message: 'Post deleted' });
 
