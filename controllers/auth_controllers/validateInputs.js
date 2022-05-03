@@ -1,6 +1,6 @@
-const validateUserInputs = (email, password, username) => {
+const validateUserInputs = (email, password, username, name) => {
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !name) {
         
         const error = new Error
 

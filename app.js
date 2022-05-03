@@ -1,13 +1,14 @@
 require('dotenv').config();
 const express = require ( 'express' );
+const app = express()
+const server = require( 'http' ).Server( app );
 const connect = require('./config/db.config');
 const cors = require('cors')
 
-const app = express()
 app.use(
     cors({
       credentials: true,
-      origin: ['https://www.google.com']
+      origin: ['http://localhost:3000']
     })
 );
 
@@ -25,6 +26,9 @@ app.use('/post/', require('./routes/post.routes'))
 
 app.use('/comment', require('./routes/comment.routes'))
 
-app.listen(process.env.PORT, () => {
+
+server.listen(process.env.PORT, () => {
     console.log(`Server running on ${process.env.PORT}`)
 })
+
+module.exports = server;
