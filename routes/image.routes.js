@@ -9,16 +9,65 @@ const deleteOldImage = require('../controllers/image_controllers/deleteOldImage'
 router.put('/profileImage/:id',  uploadCloud.single('image'),  async (req, res) => {
 
     const { id } = req.params;
-    const { path } = req.file||null;
-    const { type } = req.body;
+    const { path } = req.file;
+   
     
     try {
+
+        if(!path){
+
+            const error = new Error;
+            error.status = 400;
+            error.message = "No image selected";
+            throw error;
+
+        }
         
         verifyCredentials(id,req.id)
         const user = await User.findById(id);
         const newImage = await Image.create({imageUrl:path});
-        await deleteOldImage(user[type]);
-        user[type] = newImage._id;
+        await deleteOldImage(user.profileImage);
+        user.profileImage = newImage._id;
+        
+        await user.save();
+        
+        res.status(200).json({ message: 'Image updated' }); 
+        
+    } catch (error) {
+
+        res.status(error.status || 400).json({
+
+            place: "Error on upload image",
+            error: error.message
+
+        });
+
+    }
+
+})
+
+router.put('/coverImage/:id',  uploadCloud.single('image'),  async (req, res) => {
+
+    const { id } = req.params;
+    const { path } = req.file;
+   
+    
+    try {
+
+        if(!path){
+
+            const error = new Error;
+            error.status = 400;
+            error.message = "No image selected";
+            throw error;
+
+        }
+        
+        verifyCredentials(id,req.id)
+        const user = await User.findById(id);
+        const newImage = await Image.create({imageUrl:path});
+        await deleteOldImage(user.coverImage);
+        user.coverImage = newImage._id;
         
         await user.save();
         
@@ -42,14 +91,23 @@ router.put('/photos/:id',uploadCloud.array('image'),async(req,res)=>{
 
     const { id } = req.params;
     const  files  = req.files
-
+    
     try {
+       
+        if(files.length === 0){
+
+            const error = new Error;
+            error.status = 400;
+            error.message = "No image selected";
+            throw error;
+
+        }
         
         verifyCredentials(id,req.id)
         const user = await User.findById(id);
 
         for(let i=0;i<files.length;i++){
-            console.log(files[i].path)
+           
             const newImage = await Image.create({imageUrl:files[i].path})
             user.photos.push(newImage._id);
         }
@@ -73,7 +131,7 @@ router.put('/photos/:id',uploadCloud.array('image'),async(req,res)=>{
 router.get('/userPhotos/:id',async(req,res)=>{
     
         const { id } = req.params;
-        const { limit, offset } = req.body;
+        //const { limit, offset } = req.body;
     
         try {
     
@@ -81,8 +139,8 @@ router.get('/userPhotos/:id',async(req,res)=>{
             const images = await Image.find({_id:{$in:user.photos}})
             .sort({createdAt:-1})
             .select({ imageUrl:1,_id:1 })
-            .skip(offset)
-            .limit(limit);
+            //.skip(offset)
+            //.limit(limit);
 
             res.status(200).json({ images: images }); 
     
@@ -131,7 +189,7 @@ router.delete('/delete/:userId',async(req,res)=>{
     const { userId } = req.params;
     const { type, imageId } = req.body;
     
-    console.log(type)
+   
     if(type === 'profileImage' || type === 'coverImage'){
 
         try {
@@ -155,7 +213,7 @@ router.delete('/delete/:userId',async(req,res)=>{
         
         }
     }else{
-            console.log(imageId)
+           
             try {
                 
                 verifyCredentials(userId,req.id)

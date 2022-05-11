@@ -9,18 +9,18 @@ const router = Router();
 
 router.post('/signup', async (req, res) => {
 
-    const { username, email, password } = req.body
-
+    const { username, email, password, name } = req.body
+ 
     try {
 
-        validateInputs(email, password, username)
+        validateInputs(email, password, username, name)
         await verifyExist(email, username)
         const salt = await bcrypt.genSalt(12);
         hPassword = await bcrypt.hash(password, salt);
 
         await User.create({
 
-            name:username,
+            name,
             username,
             email,
             hPassword,
@@ -48,8 +48,8 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     
         const { email, password, remember } = req.body
-    
-        try {
+        
+        try {   
             
             const user = await User.findOne({ email: email })
 
@@ -90,7 +90,7 @@ router.post('/login', async (req, res) => {
 
             }
 
-            res.status(200).json({username:user.username, token:token })
+            res.status(200).json({username:user.username, token:token,user:user._id});
     
         } catch (error) {
     
