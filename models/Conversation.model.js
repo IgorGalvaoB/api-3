@@ -23,9 +23,10 @@ const conversationSchema = new Schema({
 
         type: Schema.Types.ObjectId, ref: 'Message',
 
+    }
     },
-
-
-});
+    {
+        timestamps: true,
+    });
 
 module.exports = model('Conversation', conversationSchema);

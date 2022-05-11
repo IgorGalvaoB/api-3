@@ -66,12 +66,15 @@ router.post('/:id',uploadCloud.array('image'),async (req, res) => {
 router.delete('/delete/:id',async (req,res)=>{
 
     const { id } = req.params;
-    const { postedAt } = req.body;
+   
+    const  postedAt  = req.id;
 
     try {
 
         const user = await User.findById(postedAt).select('posts');
+        console.log(user)
         const post = await Post.find({_id:{$in:user.posts},_id:id,count:{$gt:0}});
+      
         
         await verifyCredentialsDelete(post,postedAt,req.id)
 

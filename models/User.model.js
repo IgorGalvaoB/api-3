@@ -27,6 +27,9 @@ const userSchema = new Schema(
                 message: email => `${email.value} is not a valid email!`
             },
         },
+        conversations: [{
+            type: Schema.Types.ObjectId, ref: 'Conversation',
+        }],
         hPassword:{
             type: String,
             required: true,

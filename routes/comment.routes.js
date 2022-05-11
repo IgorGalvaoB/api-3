@@ -9,7 +9,7 @@ router.post('/create/:id',async(req,res)=>{
 
     const { id } = req.params;
     const { content, type } = req.body;
-
+    
     try{
 
         const user = await User.findById(req.id);

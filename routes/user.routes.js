@@ -108,7 +108,10 @@ router.post('/acceptFriend/:id', async (req, res) => {
     try {
 
         const user = await User.findById(userId);
+        console.log(user)
         const friend = await User.findById(friendId);
+        console.log(friend)
+    
         if (user.friends.indexOf(friendId) !== -1) {
 
             const error = new Error;
@@ -118,8 +121,8 @@ router.post('/acceptFriend/:id', async (req, res) => {
 
         }
 
-        user.friends = [...user.friends, friendId];
-        friend.friends = [...friend.friends, userId];
+        user.friends = [...user.friends, friend._id];
+        friend.friends = [...friend.friends, user._id];
 
         const indexUser = user.requestFriends.indexOf(friendId);
         const indexFriend = friend.requestFriends.indexOf(userId);
@@ -200,20 +203,32 @@ router.get('/findUser/:username', async (req, res) => {
 
     const { username } = req.params;
 
-    try {
+    const id = req.id;
 
-        const user = await User.findOne({ username: username })
+    try {
+        const user0 = await User.findById(id);
+
+        let user = await User.findOne({ username: username })
             .populate({ 
-                path: 'friends profileImage',
+                path: 'friends',
+                populate: {
+                    path: 'profileImage',
+                },
                 options:{
                     select: 'username name _id profileImage',
-                    limit:9,
                     sort:{name:1,_id:1}
                 }
             })
             .populate({
+                path: 'profileImage',
+                select: '_id imageUrl'
+            })
+            .populate({
+                path:'coverImage',
+                select: '_id imageUrl'
+            })
+            .populate({
                 path: 'photos',
-                limit:9,
                 options:{
                     sort:{createdAt:-1},
                     select: '_id imageUrl'
@@ -223,14 +238,58 @@ router.get('/findUser/:username', async (req, res) => {
                 path: 'posts',
                 populate: {
                     path: 'comments',
-                    perDocumentLimit: 5,
+                    populate: {
+                        path: 'by',
+                        populate:{
+                            path:'profileImage',
+                        },
+                        select:'username name _id profileImage'
+                        
+                    }
                 },
-                limit: 7,
+                options:{
+                    sort:{createdAt:-1},
+                }
+              
             }).select({ hPassword: 0, email: 0 })
-
+            
+            const relationship = ()=>{
+               
+                if(user._id.toString() === req.id.toString()){
+                    
+                    return 'self'
+                }
+                const userRequests = user.requestFriends.map(request=>{
+                    if(request){
+                        return request.toString()
+                    }
+                    return
+                });
+                
+                const userFriends = user.friends.map(friend=>{
+                    console.log(friend._id.toString(),req.id)
+                    return friend._id.toString()
+                });
+                
+                const user0Requests = user0.requestFriends.map(request=>{
+                    return request.toString()
+                })
+                
+                if(userFriends.indexOf(req.id)!==-1){
+                    return 'friend'
+                }
+                if(userRequests.indexOf(req.id)!==-1){
+                    return 'requested'
+                }
+                if(user0Requests.indexOf(user._id.toString())!==-1){
+                    return 'requested you'
+                }
+                return 'none'
+            }
+            const isFriend = relationship();
         if (user) {
 
-            res.status(200).json({ user: user });
+            res.status(200).json({ user: user, isFriend: isFriend });
 
         } else {
 
